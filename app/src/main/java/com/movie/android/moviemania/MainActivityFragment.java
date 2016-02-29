@@ -6,9 +6,12 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,7 +25,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -31,34 +33,71 @@ public class MainActivityFragment extends Fragment {
 
     private MovieAdapter movieAdapter;
 
+    private ArrayList<Movie> movieList;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState){
+
+        super.onCreate(savedInstanceState);
+        if(savedInstanceState == null || !savedInstanceState.containsKey("movies")) {
+            movieList = new ArrayList<Movie>();
+        }
+        else {
+            movieList = savedInstanceState.getParcelableArrayList("movies");
+        }
+    }
+
     public MainActivityFragment() {
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int id = item.getItemId();
+        if (id == R.id.movie_image) {
+
+            Toast.makeText(getContext(), "Mojo", Toast.LENGTH_SHORT).show();
+
+            return true;
+    }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList("movies", movieList);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        String[] data = {
-                "Cupcake (Android Version -1.5",
-                "Cupcake (Android Version -1.5",
-                "Cupcake (Android Version -1.5"
-        };
-
-        List<Movie> movies = new ArrayList<Movie>();
         new FetchMovieTask().execute();
-        movieAdapter = new MovieAdapter(getActivity());
+        movieAdapter = new MovieAdapter(getActivity(),movieList);
 
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
         GridView gridView = (GridView) rootView.findViewById(R.id.movie_grid);
         gridView.setAdapter(movieAdapter);
 
+        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                Movie movie = movieAdapter.getItem(position);
+                Toast.makeText(getContext(), "Mojo", Toast.LENGTH_SHORT).show();
+
+            }
+        });
+
         return rootView;
     }
 
     class FetchMovieTask extends AsyncTask<Void,Void,Movie[]>
     {
-        Movie[] movieObject = null;
+        Movie[] movieObject;
 
         @Override
         protected void onPostExecute(Movie[] movies) {

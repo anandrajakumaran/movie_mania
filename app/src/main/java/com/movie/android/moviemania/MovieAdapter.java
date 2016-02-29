@@ -9,6 +9,8 @@ import android.widget.ImageView;
 
 import com.squareup.picasso.Picasso;
 
+import java.util.List;
+
 /**
  * Created by raanand on 2/21/16.
  */
@@ -16,8 +18,9 @@ public class MovieAdapter extends ArrayAdapter<Movie> {
 
     private static final String log_tag = MovieAdapter.class.getSimpleName();
 
-    public MovieAdapter(Activity context) {
-        super(context, 0);
+    public MovieAdapter(Activity context,List<Movie> movieList) {
+
+        super(context, 0,movieList);
     }
 
     @Override
