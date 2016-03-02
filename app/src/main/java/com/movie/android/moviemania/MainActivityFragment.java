@@ -1,5 +1,6 @@
 package com.movie.android.moviemania;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -87,8 +88,10 @@ public class MainActivityFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
                 Movie movie = movieAdapter.getItem(position);
-                Toast.makeText(getContext(), "Mojo", Toast.LENGTH_SHORT).show();
-
+                //Toast.makeText(getContext(), movie.originalTitle, Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(getActivity(),DetailsActivity.class).putExtra(Intent.EXTRA_TEXT,movie.originalTitle);
+                startActivity(intent);
+               // Toast.makeText(getContext(), "Mojo", Toast.LENGTH_SHORT).show();
             }
         });
 
