@@ -1,9 +1,11 @@
 package com.movie.android.moviemania;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -30,7 +32,9 @@ import java.util.ArrayList;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class MainActivityFragment extends Fragment {
+public class    MainActivityFragment extends Fragment implements SharedPreferences.OnSharedPreferenceChangeListener{
+
+    private final static String LOG_TAG = MainActivityFragment.class.getSimpleName();
 
     private MovieAdapter movieAdapter;
 
@@ -40,6 +44,10 @@ public class MainActivityFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState){
 
         super.onCreate(savedInstanceState);
+
+        PreferenceManager.getDefaultSharedPreferences(getActivity().getBaseContext())
+                .registerOnSharedPreferenceChangeListener(this);
+
         if(savedInstanceState == null || !savedInstanceState.containsKey("movies")) {
             movieList = new ArrayList<Movie>();
         }
@@ -49,6 +57,7 @@ public class MainActivityFragment extends Fragment {
     }
 
     public MainActivityFragment() {
+        setHasOptionsMenu(true);
     }
 
     @Override
@@ -89,13 +98,20 @@ public class MainActivityFragment extends Fragment {
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
                 Movie movie = movieAdapter.getItem(position);
                 //Toast.makeText(getContext(), movie.originalTitle, Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent(getActivity(),DetailsActivity.class).putExtra(Intent.EXTRA_TEXT,movie.originalTitle);
+                Intent intent = new Intent(getActivity(),DetailsActivity.class).putExtra(Intent.EXTRA_TEXT, new String[]{movie.originalTitle,
+                        movie.releaseDate,movie.overview, movie.posterName,movie.voteAverage});
+
                 startActivity(intent);
                // Toast.makeText(getContext(), "Mojo", Toast.LENGTH_SHORT).show();
             }
         });
 
         return rootView;
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+
     }
 
     class FetchMovieTask extends AsyncTask<Void,Void,Movie[]>
@@ -137,6 +153,8 @@ public class MainActivityFragment extends Fragment {
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
                 urlConnection.connect();
+
+                Log.v("Movie API URL", builtUri.toString());
 
                 InputStream inputStream = urlConnection.getInputStream();
                 StringBuffer buffer = new StringBuffer();
