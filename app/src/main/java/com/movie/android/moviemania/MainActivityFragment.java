@@ -9,12 +9,13 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
-import android.widget.Toast;
+
+import com.movie.android.moviemania.details.DetailsActivity;
+import com.movie.android.moviemania.moviedbapi.SortCriteria;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -39,6 +40,7 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
     private MovieAdapter movieAdapter;
 
     private ArrayList<Movie> movieList;
+    private FetchMovieTask fetchMovieTask = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState){
@@ -50,6 +52,7 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
 
         if(savedInstanceState == null || !savedInstanceState.containsKey("movies")) {
             movieList = new ArrayList<Movie>();
+            fetchMovies();
         }
         else {
             movieList = savedInstanceState.getParcelableArrayList("movies");
@@ -58,20 +61,6 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
 
     public MainActivityFragment() {
         setHasOptionsMenu(true);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-
-        int id = item.getItemId();
-        if (id == R.id.movie_image) {
-
-            Toast.makeText(getContext(), "Mojo", Toast.LENGTH_SHORT).show();
-
-            return true;
-    }
-
-        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -84,7 +73,7 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        new FetchMovieTask().execute();
+        //new FetchMovieTask().execute();
         movieAdapter = new MovieAdapter(getActivity(),movieList);
 
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
@@ -97,12 +86,11 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
                 Movie movie = movieAdapter.getItem(position);
-                //Toast.makeText(getContext(), movie.originalTitle, Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent(getActivity(),DetailsActivity.class).putExtra(Intent.EXTRA_TEXT, new String[]{movie.originalTitle,
-                        movie.releaseDate,movie.overview, movie.posterName,movie.voteAverage});
+
+                Intent intent = new Intent(getActivity(), DetailsActivity.class).putExtra(Intent.EXTRA_TEXT, new String[]{movie.originalTitle,
+                        movie.releaseDate, movie.overview, movie.posterName, movie.voteAverage});
 
                 startActivity(intent);
-               // Toast.makeText(getContext(), "Mojo", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -112,9 +100,35 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 
+        if (isAdded() && getString(R.string.pref_sortorder_key).equals(key)) {
+            fetchMovies();
+        }
     }
 
-    class FetchMovieTask extends AsyncTask<Void,Void,Movie[]>
+    private void fetchMovies() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        fetchMovieTask = new FetchMovieTask();
+
+        final String orderByMostPopular = getString(R.string.pref_sortorder_mostPopular);
+        final String orderByHigestRated = getString(R.string.pref_sortorder_highestRated);
+        String sortOrderSetting = prefs.getString(getString(R.string.pref_sortorder_key),
+                orderByMostPopular);
+
+        SortCriteria sortCriteria;
+        if (orderByMostPopular.equals(sortOrderSetting))
+            sortCriteria = SortCriteria.MOST_POPULAR;
+        else if (orderByHigestRated.equals(sortOrderSetting))
+            sortCriteria = SortCriteria.HIGEST_RATED;
+        else {
+            Log.w(LOG_TAG,
+                    String.format("Default Sort Order", sortOrderSetting));
+            sortCriteria = SortCriteria.MOST_POPULAR;
+        }
+
+        fetchMovieTask.execute(sortCriteria);
+    }
+
+    class FetchMovieTask extends AsyncTask<SortCriteria,Void,Movie[]>
     {
         Movie[] movieObject;
 
@@ -131,8 +145,17 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
         }
 
         @Override
-        protected Movie[] doInBackground(Void... strings) {
+        protected Movie[] doInBackground(SortCriteria... strings) {
 
+            SortCriteria sortCriteria = null;
+
+            if(strings.length == 1){
+                sortCriteria = strings[0];
+            }else{
+                sortCriteria = SortCriteria.MOST_POPULAR;
+            }
+
+            Log.v(LOG_TAG, "Sort Order" + sortCriteria);
 
             String api_key=BuildConfig.MOVIE_DB_API_KEY;
             HttpURLConnection urlConnection = null;
@@ -144,7 +167,7 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
                 final String API_KEY = "api_key";
 
                 Uri builtUri = Uri.parse(MOVIE_DB_BASE_URL).buildUpon()
-                        .appendQueryParameter(SORT_BY, "popularity.desc")
+                        .appendQueryParameter(SORT_BY,sortCriteria.getSortOption())
                         .appendQueryParameter(API_KEY, api_key)
                         .build();
 
@@ -171,7 +194,7 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
                     movieJSONStr = null;
                 }
                 movieJSONStr = buffer.toString();
-                // Log.v("MY JSON OUTPUT", forecastJSONStr);
+
                 String title="title";
                 String vote_average="vote_avergae";
                 String overview="overview";

@@ -1,4 +1,4 @@
-package com.movie.android.moviemania;
+package com.movie.android.moviemania.details;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,6 +10,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.movie.android.moviemania.MainActivityFragment;
+import com.movie.android.moviemania.Movie;
+import com.movie.android.moviemania.MovieAdapter;
+import com.movie.android.moviemania.R;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -34,22 +38,15 @@ public class DetailsActivityFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        //new MainActivityFragment().new FetchMovieTask().execute();
         movieAdapter = new MovieAdapter(getActivity(),movieList);
         ArrayList<Movie> movieList = new ArrayList<Movie>();
-
-        //View rootView = inflater.inflate(R.layout.fragment_details, container, false);
-
-//        ScrollView scrollView = (ScrollView) rootView.findViewById(R.id.movieDetailScrollView);
-//        movieDetailScrollView.setAdapter(movieAdapter);
 
         View rootView = inflater.inflate(R.layout.fragment_details, container, false);
         // The detail Activity called via intent.  Inspect the intent for forecast data.
         Intent intent = getActivity().getIntent();
         if (intent != null && intent.hasExtra(Intent.EXTRA_TEXT)) {
             movie = intent.getStringArrayExtra(Intent.EXTRA_TEXT);
-//            ((TextView) rootView.findViewById(R.id.movieDetailTitle))
-//                    .setText(title);
+
             Log.v("Image", baseImageUrl + movie[4]);
 
             ((TextView) rootView.findViewById(R.id.movieDetailTitle))
@@ -68,8 +65,6 @@ public class DetailsActivityFragment extends Fragment {
 
             ((TextView) rootView.findViewById(R.id.movieDetailUserRating))
                     .setText(String.format("%s / 10", movie[4]));
-
-           // Picasso.with(getContext()).load(baseImageUrl + title).into(iconView);
         }
 
         return rootView;

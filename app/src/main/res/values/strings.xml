@@ -6,4 +6,23 @@
     <string name="release_date">Release Date</string>
     <string name="rating">Rating</string>
     <string name="synopsis">Synopsis</string>
+
+    <string name="title_activity_settings">Settings</string>
+
+
+    <!-- Strings related to Settings -->
+    <string name="pref_sortorder_key" translatable="false">sortOrder</string>
+
+    <string name="pref_sortorder_label">Sort order</string>
+    <string name="pref_sortorder_mostPopular">0</string>
+    <string name="pref_sortorder_highestRated">1</string>
+
+    <string-array name="pref_sortorder_options">
+        <item>Most popular</item>
+        <item>Highest-rated</item>
+    </string-array>
+    <string-array name="pref_sortorder_values">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
 </resources>
