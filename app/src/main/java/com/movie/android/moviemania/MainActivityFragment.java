@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
 
+import com.movie.android.moviemania.asynctask.FetchMoviesDetails;
 import com.movie.android.moviemania.details.DetailsActivity;
 import com.movie.android.moviemania.moviedbapi.SortCriteria;
 
@@ -88,7 +89,7 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
                 Movie movie = movieAdapter.getItem(position);
 
                 Intent intent = new Intent(getActivity(), DetailsActivity.class).putExtra(Intent.EXTRA_TEXT, new String[]{movie.originalTitle,
-                        movie.releaseDate, movie.overview, movie.posterName, movie.voteAverage});
+                        movie.releaseDate, movie.overview, movie.posterName, movie.voteAverage,movie.id,movie.trailer,movie.review});
 
                 startActivity(intent);
             }
@@ -211,10 +212,14 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
                             jsonObject.getString("vote_average"),
                             jsonObject.getString("release_date"),
                             jsonObject.getString("poster_path"),
-                            jsonObject.getString("backdrop_path"));
+                            jsonObject.getString("backdrop_path"),
+                            jsonObject.getString("id"));
 
 
                     Log.v("POSTER PATH", jsonObject.getString("backdrop_path"));
+                    executeMovieDetails(movieObject[i], "reviews");
+                    System.out.println("review-->"+movieObject[i].getReview());
+
                 }
 
 
@@ -229,5 +234,16 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
             return movieObject;
 
         }
+
+        private void executeMovieDetails(Movie movie,String requiredDetail){
+            FetchMoviesDetails movieReviews = new FetchMoviesDetails(movie,"reviews");
+            movieReviews.execute();
+            FetchMoviesDetails fetchTrailer = new FetchMoviesDetails(movie,
+                    "videos");
+            fetchTrailer.execute();
+            System.out.println("review11-->" + movie.getReview());
+        }
     }
+
+
 }

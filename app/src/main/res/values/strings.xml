@@ -6,6 +6,8 @@
     <string name="release_date">Release Date</string>
     <string name="rating">Rating</string>
     <string name="synopsis">Synopsis</string>
+    <string name="add_favs">Favorites</string>
+    <string name="trailers">Trailers</string>
 
     <string name="title_activity_settings">Settings</string>
 
