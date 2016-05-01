@@ -1,7 +1,10 @@
 package com.movie.android.moviemania.details;
 
 import android.content.ActivityNotFoundException;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -9,6 +12,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -17,6 +21,8 @@ import com.movie.android.moviemania.MainActivityFragment;
 import com.movie.android.moviemania.Movie;
 import com.movie.android.moviemania.MovieAdapter;
 import com.movie.android.moviemania.R;
+import com.movie.android.moviemania.asynctask.FetchMoviesDetails;
+import com.movie.android.moviemania.moviedbapi.MovieContract;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
@@ -32,7 +38,8 @@ public class DetailsActivityFragment extends Fragment {
 
     private final static String LOG_TAG = MainActivityFragment.class.getSimpleName();
 
-    private String[] movie;
+    private String[] movieArray;
+    Movie movie ;
     private MovieAdapter movieAdapter;
     private View rootView;
     private String trailerId;
@@ -53,9 +60,9 @@ public class DetailsActivityFragment extends Fragment {
         // The detail Activity called via intent.  Inspect the intent for forecast data.
         Intent intent = getActivity().getIntent();
         if (intent != null && intent.hasExtra(Intent.EXTRA_TEXT)) {
-            movie = intent.getStringArrayExtra(Intent.EXTRA_TEXT);
+            movieArray = intent.getStringArrayExtra(Intent.EXTRA_TEXT);
+            movie = new Movie(movieArray[0],movieArray[2],movieArray[3],movieArray[1],movieArray[3],movieArray[0],movieArray[5]);
 
-            Log.v("Image", baseImageUrl + movie[4]);
             displayDetails();
             getTrailers(inflater);
             getReviews(inflater);
@@ -66,39 +73,67 @@ public class DetailsActivityFragment extends Fragment {
 
     private void displayDetails(){
 
+        toggleFavorites();
         ((TextView) rootView.findViewById(R.id.movieDetailTitle))
-                .setText(movie[0]);
+                .setText(movieArray[0]);
 
         ((TextView) rootView.findViewById(R.id.movieDetailYear))
-                .setText(movie[1]);
+                .setText(movieArray[1]);
 
         ((TextView) rootView.findViewById(R.id.movieSynopsis))
-                .setText(movie[2]);
+                .setText(movieArray[2]);
 
         ImageView iconView = (ImageView) rootView.findViewById(R.id.moviePosterImageView);
         Picasso.with(getContext())
-                .load(baseImageUrl + movie[3])
+                .load(baseImageUrl + movieArray[3])
                 .into(iconView);
 
         ((TextView) rootView.findViewById(R.id.movieDetailUserRating))
-                .setText(String.format("%s / 10", movie[4]));
+                .setText(String.format("%s / 10", movieArray[4]));
 
-        System.out.println("Trailer"+movie[6]);
+        ImageButton favorites = (ImageButton) rootView.findViewById(R.id.add_to_fav_view);
+
+        favorites.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean inFavorites = checkFavorites();
+                if (inFavorites) {
+                    deleteFromFavorites();
+                } else {
+                    addToFavorites();
+                }
+                toggleFavorites();
+            }
+        });
+
+        FetchMoviesDetails movieReviews = new FetchMoviesDetails(movie,"reviews");
+        FetchMoviesDetails fetchTrailer = new FetchMoviesDetails(movie,
+                "trailers");
+
+        try {
+            fetchTrailer.execute().get();
+            movieReviews.execute().get();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     private void getTrailers(LayoutInflater layoutInflater){
 
-        final String ARRAY_OF_TRAILERS = "results";
-        final String TRAILER_ID = "key";
+        final String ARRAY_OF_TRAILERS = "youtube";
+        final String TRAILER_ID = "source";
         final String TRAILER_TITLE = "name";
 
         try{
 
-            JSONObject trailersJson = new JSONObject(movie[6]);
+            System.out.println("Get Trailers"+movie.getTrailer());
+            JSONObject trailersJson = new JSONObject(movie.getTrailer());
             JSONArray trailersArray = trailersJson.getJSONArray(ARRAY_OF_TRAILERS);
-            int trailersLength =  trailersArray.length();
 
-            if(trailersLength > 0) {
+
+            if(trailersArray.length() > 0) {
+
+                int trailersLength =  trailersArray.length();
 
                 LinearLayout innerScrollLayout = (LinearLayout)
                         rootView.findViewById(R.id.inner_scroll_layout);
@@ -158,9 +193,89 @@ public class DetailsActivityFragment extends Fragment {
 
     }
 
+    /*
+* add movie into favorites in the DB
+* */
+    private void addToFavorites() {
+
+        Uri uri = MovieContract.MovieEntry.CONTENT_URI;
+        ContentResolver resolver = getActivity().getContentResolver();
+        ContentValues values = new ContentValues();
+        values.clear();
+
+        values.put(MovieContract.MovieEntry.MOVIE_ID, movieArray[5]);
+        values.put(MovieContract.MovieEntry.MOVIE_BACKDROP_URI, movieArray[0] );
+        values.put(MovieContract.MovieEntry.MOVIE_TITLE, movieArray[0]);
+        values.put(MovieContract.MovieEntry.MOVIE_POSTER, movieArray[3]);
+        values.put(MovieContract.MovieEntry.MOVIE_OVERVIEW, movieArray[2]);
+        values.put(MovieContract.MovieEntry.MOVIE_VOTE_AVERAGE, movieArray[3]);
+        values.put(MovieContract.MovieEntry.MOVIE_RELEASE_DATE, movieArray[1]);
+        values.put(MovieContract.MovieEntry.MOVIE_REVIEWS, movie.getReview());
+        values.put(MovieContract.MovieEntry.MOVIE_TRAILERS, movie.getTrailer());
+
+        Uri check = resolver.insert(uri, values);
+    }
+
+
+    /*
+    * delete movie from the favorites in the DB
+    * */
+    private void deleteFromFavorites() {
+
+        Uri uri = MovieContract.MovieEntry.CONTENT_URI;
+        ContentResolver resolver = getActivity().getContentResolver();
+
+        long noDeleted = resolver.delete(uri,
+                MovieContract.MovieEntry.MOVIE_ID + " = ? ",
+                new String[]{ movieArray[5] + "" });
+
+    }
+
+
+    /*
+    * query DB to see if the movie is already there.
+    * */
+    private boolean checkFavorites() {
+
+        Uri uri = MovieContract.MovieEntry.buildMovieUri(Long.parseLong(movieArray[5]));
+        ContentResolver resolver = getActivity().getContentResolver();
+        Cursor cursor = null;
+
+        try {
+
+            cursor = resolver.query(uri, null, null, null, null);
+        
+            if (cursor.moveToFirst()) {
+                return true;
+            }
+        } finally {
+
+            if(cursor != null)
+                cursor.close();
+
+        }
+
+        return false;
+    }
+
+
+    /*
+    * toggles active state for the favorited star based on if it is in the database
+    * */
+    private void toggleFavorites(){
+        boolean inFavorites = checkFavorites();
+        ImageButton addToFav = (ImageButton) rootView.findViewById(R.id.add_to_fav_view);
+
+        if(inFavorites){
+            addToFav.setImageResource(R.drawable.add_favorite);
+        }else{
+            addToFav.setImageResource(R.drawable.remove_favorite);
+        }
+    }
+
     private void getReviews(LayoutInflater layoutInflater){
 
-        if(movie[7] == null)
+        if(movie.getReview() == null)
             return;
 
         final String ARRAY_OF_REVIEW = "results";
@@ -168,7 +283,7 @@ public class DetailsActivityFragment extends Fragment {
         final String REVIEW_CONTENT = "content";
 
         try {
-            JSONObject reviewsJson = new JSONObject(movie[7]);
+            JSONObject reviewsJson = new JSONObject(movie.getReview());
             JSONArray reviewsArray = reviewsJson.getJSONArray(ARRAY_OF_REVIEW);
             int reviewsLength = reviewsArray.length();
 
