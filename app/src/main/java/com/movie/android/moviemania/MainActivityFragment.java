@@ -217,8 +217,8 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
 
 
                     Log.v("POSTER PATH", jsonObject.getString("backdrop_path"));
-                    executeMovieDetails(movieObject[i], "reviews");
-                    System.out.println("review-->"+movieObject[i].getReview());
+                  //  executeMovieDetails(movieObject[i], "reviews");
+                   // System.out.println("review-->"+movieObject[i].getReview());
 
                 }
 
@@ -239,7 +239,7 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
             FetchMoviesDetails movieReviews = new FetchMoviesDetails(movie,"reviews");
             movieReviews.execute();
             FetchMoviesDetails fetchTrailer = new FetchMoviesDetails(movie,
-                    "videos");
+                    "trailers");
             fetchTrailer.execute();
             System.out.println("review11-->" + movie.getReview());
         }

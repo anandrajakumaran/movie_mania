@@ -34,6 +34,7 @@ public class FetchMoviesDetails extends AsyncTask<String, Void, String> {
     @Override
     protected void onPostExecute(String result) {
 
+        System.out.print("Movie Details"+result);
         if(requiredData.equals("reviews")){
 
             movie.setReview(result);
@@ -60,7 +61,7 @@ public class FetchMoviesDetails extends AsyncTask<String, Void, String> {
                     .build();
 
             URL url = new URL(builtUri.toString());
-            Log.v("Movie Detail URI",builtUri.toString());
+
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestMethod("GET");
             urlConnection.connect();
@@ -80,6 +81,13 @@ public class FetchMoviesDetails extends AsyncTask<String, Void, String> {
 
             if (buffer.length() == 0) {
                 return null;
+            }
+
+            if(requiredData.equals("reviews")){
+
+                movie.setReview(buffer.toString());
+            }else {
+                movie.setTrailer(buffer.toString());
             }
 
             return buffer.toString();
