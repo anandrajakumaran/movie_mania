@@ -6,7 +6,8 @@ package com.movie.android.moviemania.moviedbapi;
 public enum SortCriteria {
 
     HIGEST_RATED("vote_average.desc"),
-    MOST_POPULAR("popularity.desc");
+    MOST_POPULAR("popularity.desc"),
+    FAVORITES("favorites");
 
     private String sortOption;
 

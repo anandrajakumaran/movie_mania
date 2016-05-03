@@ -208,7 +208,7 @@ public class DetailsActivityFragment extends Fragment {
         values.put(MovieContract.MovieEntry.MOVIE_TITLE, movieArray[0]);
         values.put(MovieContract.MovieEntry.MOVIE_POSTER, movieArray[3]);
         values.put(MovieContract.MovieEntry.MOVIE_OVERVIEW, movieArray[2]);
-        values.put(MovieContract.MovieEntry.MOVIE_VOTE_AVERAGE, movieArray[3]);
+        values.put(MovieContract.MovieEntry.MOVIE_VOTE_AVERAGE, movieArray[4]);
         values.put(MovieContract.MovieEntry.MOVIE_RELEASE_DATE, movieArray[1]);
         values.put(MovieContract.MovieEntry.MOVIE_REVIEWS, movie.getReview());
         values.put(MovieContract.MovieEntry.MOVIE_TRAILERS, movie.getTrailer());
@@ -244,7 +244,7 @@ public class DetailsActivityFragment extends Fragment {
         try {
 
             cursor = resolver.query(uri, null, null, null, null);
-        
+
             if (cursor.moveToFirst()) {
                 return true;
             }

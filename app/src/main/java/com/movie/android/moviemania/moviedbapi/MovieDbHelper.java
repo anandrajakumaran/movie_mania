@@ -14,7 +14,7 @@ public class MovieDbHelper extends SQLiteOpenHelper {
 
     private final static String LOG_TAG = MovieDbHelper.class.getSimpleName();
 
-    private  static  final int DATABASE_VERSION = 1;
+    private  static  final int DATABASE_VERSION = 2;
 
     static final String DATABASE_NAME = "movies.db";
 
