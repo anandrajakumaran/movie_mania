@@ -1,5 +1,6 @@
 package com.movie.android.moviemania.details;
 
+import android.app.Fragment;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -7,7 +8,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -38,7 +39,7 @@ public class DetailsActivityFragment extends Fragment {
 
     private final static String LOG_TAG = MainActivityFragment.class.getSimpleName();
 
-    private String[] movieArray;
+   // private String[] movieArray;
     Movie movie ;
     private MovieAdapter movieAdapter;
     private View rootView;
@@ -56,17 +57,43 @@ public class DetailsActivityFragment extends Fragment {
         movieAdapter = new MovieAdapter(getActivity(),movieList);
         ArrayList<Movie> movieList = new ArrayList<Movie>();
 
-        rootView = inflater.inflate(R.layout.fragment_details, container, false);
+
         // The detail Activity called via intent.  Inspect the intent for forecast data.
         Intent intent = getActivity().getIntent();
-        if (intent != null && intent.hasExtra(Intent.EXTRA_TEXT)) {
-            movieArray = intent.getStringArrayExtra(Intent.EXTRA_TEXT);
-            movie = new Movie(movieArray[0],movieArray[2],movieArray[3],movieArray[1],movieArray[3],movieArray[0],movieArray[5]);
+        Bundle arguments = getArguments();
 
+        if(arguments != null || intent != null && intent.hasExtra("movies_details")){
+
+            rootView = inflater.inflate(R.layout.fragment_details, container, false);
+            if (arguments != null) {
+
+                movie = (Movie)getArguments().getParcelable("movies_details");
+            }else{
+                movie = (Movie)intent.getParcelableExtra("movies_details");
+            }
+            // display the main movie info
             displayDetails();
             getTrailers(inflater);
             getReviews(inflater);
+
+        }else{
+            rootView = inflater.inflate(R.layout.fragment_movie_detail_placeholder,
+                    container, false);
         }
+//        if (intent != null && intent.hasExtra(Intent.EXTRA_TEXT)) {
+//
+//            rootView = inflater.inflate(R.layout.fragment_details, container, false);
+//
+//            movieArray = intent.getStringArrayExtra(Intent.EXTRA_TEXT);
+//            movie = new Movie(movieArray[0],movieArray[2],movieArray[3],movieArray[1],movieArray[3],movieArray[0],movieArray[5]);
+//
+//            displayDetails();
+//            getTrailers(inflater);
+//            getReviews(inflater);
+//        }else{
+//            rootView = inflater.inflate(R.layout.fragment_movie_detail_placeholder,
+//                    container, false);
+//        }
 
         return rootView;
     }
@@ -75,21 +102,21 @@ public class DetailsActivityFragment extends Fragment {
 
         toggleFavorites();
         ((TextView) rootView.findViewById(R.id.movieDetailTitle))
-                .setText(movieArray[0]);
+                .setText(movie.getOriginalTitle());
 
         ((TextView) rootView.findViewById(R.id.movieDetailYear))
-                .setText(movieArray[1]);
+                .setText(movie.getReleaseDate());
 
         ((TextView) rootView.findViewById(R.id.movieSynopsis))
-                .setText(movieArray[2]);
+                .setText(movie.getOverview());
 
         ImageView iconView = (ImageView) rootView.findViewById(R.id.moviePosterImageView);
-        Picasso.with(getContext())
-                .load(baseImageUrl + movieArray[3])
+        Picasso.with(getActivity())
+                .load(baseImageUrl + movie.getPosterName())
                 .into(iconView);
 
         ((TextView) rootView.findViewById(R.id.movieDetailUserRating))
-                .setText(String.format("%s / 10", movieArray[4]));
+                .setText(String.format("%s / 10", movie.getVoteAverage()));
 
         ImageButton favorites = (ImageButton) rootView.findViewById(R.id.add_to_fav_view);
 
@@ -203,13 +230,13 @@ public class DetailsActivityFragment extends Fragment {
         ContentValues values = new ContentValues();
         values.clear();
 
-        values.put(MovieContract.MovieEntry.MOVIE_ID, movieArray[5]);
-        values.put(MovieContract.MovieEntry.MOVIE_BACKDROP_URI, movieArray[0] );
-        values.put(MovieContract.MovieEntry.MOVIE_TITLE, movieArray[0]);
-        values.put(MovieContract.MovieEntry.MOVIE_POSTER, movieArray[3]);
-        values.put(MovieContract.MovieEntry.MOVIE_OVERVIEW, movieArray[2]);
-        values.put(MovieContract.MovieEntry.MOVIE_VOTE_AVERAGE, movieArray[4]);
-        values.put(MovieContract.MovieEntry.MOVIE_RELEASE_DATE, movieArray[1]);
+        values.put(MovieContract.MovieEntry.MOVIE_ID, movie.getId());
+        values.put(MovieContract.MovieEntry.MOVIE_BACKDROP_URI, movie.getThumbnail());
+        values.put(MovieContract.MovieEntry.MOVIE_TITLE, movie.getOriginalTitle());
+        values.put(MovieContract.MovieEntry.MOVIE_POSTER, movie.getPosterName());
+        values.put(MovieContract.MovieEntry.MOVIE_OVERVIEW, movie.getOverview());
+        values.put(MovieContract.MovieEntry.MOVIE_VOTE_AVERAGE, movie.getVoteAverage());
+        values.put(MovieContract.MovieEntry.MOVIE_RELEASE_DATE, movie.getReleaseDate());
         values.put(MovieContract.MovieEntry.MOVIE_REVIEWS, movie.getReview());
         values.put(MovieContract.MovieEntry.MOVIE_TRAILERS, movie.getTrailer());
 
@@ -227,7 +254,7 @@ public class DetailsActivityFragment extends Fragment {
 
         long noDeleted = resolver.delete(uri,
                 MovieContract.MovieEntry.MOVIE_ID + " = ? ",
-                new String[]{ movieArray[5] + "" });
+                new String[]{ movie.getId() + "" });
 
     }
 
@@ -237,7 +264,7 @@ public class DetailsActivityFragment extends Fragment {
     * */
     private boolean checkFavorites() {
 
-        Uri uri = MovieContract.MovieEntry.buildMovieUri(Long.parseLong(movieArray[5]));
+        Uri uri = MovieContract.MovieEntry.buildMovieUri(Long.parseLong(movie.getId()));
         ContentResolver resolver = getActivity().getContentResolver();
         Cursor cursor = null;
 

@@ -1,7 +1,6 @@
 package com.movie.android.moviemania;
 
 import android.content.ContentResolver;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
@@ -17,7 +16,6 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 
 import com.movie.android.moviemania.asynctask.FetchMoviesDetails;
-import com.movie.android.moviemania.details.DetailsActivity;
 import com.movie.android.moviemania.moviedbapi.MovieContract;
 import com.movie.android.moviemania.moviedbapi.SortCriteria;
 
@@ -46,6 +44,10 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
     private ArrayList<Movie> movieList;
     private FetchMovieTask fetchMovieTask = null;
 
+
+    public interface Callback {
+        public void loadItem(Movie movie);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState){
@@ -94,10 +96,9 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
                 Movie movie = movieAdapter.getItem(position);
 
-                Intent intent = new Intent(getActivity(), DetailsActivity.class).putExtra(Intent.EXTRA_TEXT, new String[]{movie.originalTitle,
-                        movie.releaseDate, movie.overview, movie.posterName, movie.voteAverage,movie.id,movie.trailer,movie.review});
-
-                startActivity(intent);
+                ((Callback) getActivity())
+                        .loadItem(movie);
+                
             }
         });
 
