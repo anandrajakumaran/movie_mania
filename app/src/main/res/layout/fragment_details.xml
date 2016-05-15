@@ -14,7 +14,8 @@ tools:showIn="@layout/activity_details">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:id="@+id/inner_scroll_layout">
 
         <TextView
             android:id="@+id/movieDetailTitle"
@@ -69,6 +70,31 @@ tools:showIn="@layout/activity_details">
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:textAppearance="?android:attr/textAppearanceSmall" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    >
+                    <TextView
+                        android:id="@+id/favorites_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingTop="20dp"
+                        style="@style/AppTheme"
+                        android:textAppearance="?android:attr/textAppearanceLarge"
+                        android:text="@string/add_favs"
+                        />
+
+                    <ImageButton
+                        android:id="@+id/add_to_fav_view"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/add_favorite"
+                        android:background="@null"
+                        android:padding="5sp"/>
+
+                </LinearLayout>
             </LinearLayout>
 
         </LinearLayout>
@@ -88,7 +114,9 @@ tools:showIn="@layout/activity_details">
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:autoText="false" />
 
-        <!-- Separator -->
+
+
+        <!-- Separator Line-->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="1sp"

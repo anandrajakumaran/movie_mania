@@ -35,6 +35,11 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.movie.android.moviemania.MainActivity" />
         </activity>
+
+        <!-- content provider -->
+        <provider
+            android:authorities="com.movie.android.moviemania"
+            android:name=".moviedbapi.MovieProvider" />
     </application>
 
 </manifest>

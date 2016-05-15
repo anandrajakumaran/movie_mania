@@ -1,7 +1,8 @@
 package com.movie.android.moviemania;
 
-import android.content.Intent;
+import android.content.ContentResolver;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -14,7 +15,8 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
 
-import com.movie.android.moviemania.details.DetailsActivity;
+import com.movie.android.moviemania.asynctask.FetchMoviesDetails;
+import com.movie.android.moviemania.moviedbapi.MovieContract;
 import com.movie.android.moviemania.moviedbapi.SortCriteria;
 
 import org.json.JSONArray;
@@ -42,6 +44,11 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
     private ArrayList<Movie> movieList;
     private FetchMovieTask fetchMovieTask = null;
 
+
+    public interface Callback {
+        public void loadItem(Movie movie);
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState){
 
@@ -55,6 +62,7 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
             fetchMovies();
         }
         else {
+
             movieList = savedInstanceState.getParcelableArrayList("movies");
         }
     }
@@ -73,6 +81,7 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
+
         //new FetchMovieTask().execute();
         movieAdapter = new MovieAdapter(getActivity(),movieList);
 
@@ -87,10 +96,9 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
                 Movie movie = movieAdapter.getItem(position);
 
-                Intent intent = new Intent(getActivity(), DetailsActivity.class).putExtra(Intent.EXTRA_TEXT, new String[]{movie.originalTitle,
-                        movie.releaseDate, movie.overview, movie.posterName, movie.voteAverage});
-
-                startActivity(intent);
+                ((Callback) getActivity())
+                        .loadItem(movie);
+                
             }
         });
 
@@ -111,21 +119,30 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
 
         final String orderByMostPopular = getString(R.string.pref_sortorder_mostPopular);
         final String orderByHigestRated = getString(R.string.pref_sortorder_highestRated);
+        final String orderByFavorites = getString(R.string.pref_sortorder_favorites);
         String sortOrderSetting = prefs.getString(getString(R.string.pref_sortorder_key),
                 orderByMostPopular);
 
         SortCriteria sortCriteria;
-        if (orderByMostPopular.equals(sortOrderSetting))
+        if (orderByMostPopular.equals(sortOrderSetting)) {
             sortCriteria = SortCriteria.MOST_POPULAR;
-        else if (orderByHigestRated.equals(sortOrderSetting))
+        }else if (orderByHigestRated.equals(sortOrderSetting)) {
             sortCriteria = SortCriteria.HIGEST_RATED;
-        else {
-            Log.w(LOG_TAG,
-                    String.format("Default Sort Order", sortOrderSetting));
+        }else if(orderByFavorites.equals(sortOrderSetting)) {
+            sortCriteria = SortCriteria.FAVORITES;
+        }else {
+
             sortCriteria = SortCriteria.MOST_POPULAR;
         }
 
-        fetchMovieTask.execute(sortCriteria);
+        Log.w(LOG_TAG,
+                String.format("Sort Criteria is :", sortCriteria));
+
+          try {
+              fetchMovieTask.execute(sortCriteria).get();
+          }catch (Exception e){
+              e.printStackTrace();
+          }
     }
 
     class FetchMovieTask extends AsyncTask<SortCriteria,Void,Movie[]>
@@ -156,6 +173,15 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
             }
 
             Log.v(LOG_TAG, "Sort Order" + sortCriteria);
+
+            if(sortCriteria.toString().equalsIgnoreCase("FAVORITES")){
+                getFavorites();
+                movieObject = movieList.toArray(new Movie[movieList.size()]);
+                return movieObject;
+            }
+
+
+
 
             String api_key=BuildConfig.MOVIE_DB_API_KEY;
             HttpURLConnection urlConnection = null;
@@ -211,10 +237,14 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
                             jsonObject.getString("vote_average"),
                             jsonObject.getString("release_date"),
                             jsonObject.getString("poster_path"),
-                            jsonObject.getString("backdrop_path"));
+                            jsonObject.getString("backdrop_path"),
+                            jsonObject.getString("id"));
 
 
                     Log.v("POSTER PATH", jsonObject.getString("backdrop_path"));
+                  //  executeMovieDetails(movieObject[i], "reviews");
+                   // System.out.println("review-->"+movieObject[i].getReview());
+
                 }
 
 
@@ -229,5 +259,51 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
             return movieObject;
 
         }
+
+
+        private void getFavorites(){
+
+            Uri uri = MovieContract.MovieEntry.CONTENT_URI;
+            ContentResolver resolver = getActivity().getContentResolver();
+            Cursor cursor = null;
+
+            try {
+
+                cursor = resolver.query(uri, null, null, null, null);
+              
+                // clear movies
+                movieList.clear();
+
+                if (cursor.moveToFirst()){
+                    do {
+
+                        Movie movie = new Movie(cursor.getString(3), cursor.getString(5), cursor.getString(6), cursor.getString(7), cursor.getString(4),cursor.getString(4),cursor.getString(1));
+
+                        movie.setReview(cursor.getString(8));
+                        movie.setTrailer(cursor.getString(9));
+                        movieList.add(movie);
+
+                    } while (cursor.moveToNext());
+                }
+
+            } finally {
+
+                if(cursor != null)
+                    cursor.close();
+
+            }
+
+        }
+
+        private void executeMovieDetails(Movie movie,String requiredDetail){
+            FetchMoviesDetails movieReviews = new FetchMoviesDetails(movie,"reviews");
+            movieReviews.execute();
+            FetchMoviesDetails fetchTrailer = new FetchMoviesDetails(movie,
+                    "trailers");
+            fetchTrailer.execute();
+
+        }
     }
+
+
 }

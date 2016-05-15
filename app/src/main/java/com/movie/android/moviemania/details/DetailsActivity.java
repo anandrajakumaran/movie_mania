@@ -1,5 +1,6 @@
 package com.movie.android.moviemania.details;
 
+import android.app.FragmentManager;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
@@ -11,10 +12,21 @@ import com.movie.android.moviemania.SettingsActivity;
 
 public class DetailsActivity extends ActionBarActivity {
 
+    private FragmentManager fragmentManager = getFragmentManager();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.content_details);
+        setContentView(R.layout.activity_details);
+
+
+        if (savedInstanceState == null) {
+            fragmentManager.beginTransaction()
+                    .add(R.id.movie_detail_container, new DetailsActivityFragment())
+                    .commit();
+        }
+
+        getSupportActionBar().setElevation(0f);
     }
 
     @Override
