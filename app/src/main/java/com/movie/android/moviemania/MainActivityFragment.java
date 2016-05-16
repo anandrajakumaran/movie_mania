@@ -98,7 +98,7 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
 
                 ((Callback) getActivity())
                         .loadItem(movie);
-                
+
             }
         });
 
@@ -188,12 +188,17 @@ public class    MainActivityFragment extends Fragment implements SharedPreferenc
             BufferedReader reader = null;
             String movieJSONStr = null;
             try {
-                final String MOVIE_DB_BASE_URL = "http://api.themoviedb.org/3/discover/movie?";
+                String MOVIE_DB_BASE_URL = "http://api.themoviedb.org/3/movie";
                 final String SORT_BY = "sort_by";
                 final String API_KEY = "api_key";
 
+                if(sortCriteria.getSortOption().toString().equalsIgnoreCase("popularity.desc")){
+                    MOVIE_DB_BASE_URL =MOVIE_DB_BASE_URL+"/popular?";
+                }else  if(sortCriteria.getSortOption().toString().equalsIgnoreCase("vote_average.desc")){
+                    MOVIE_DB_BASE_URL =MOVIE_DB_BASE_URL+"/top_rated?";
+                }
+
                 Uri builtUri = Uri.parse(MOVIE_DB_BASE_URL).buildUpon()
-                        .appendQueryParameter(SORT_BY,sortCriteria.getSortOption())
                         .appendQueryParameter(API_KEY, api_key)
                         .build();
 
